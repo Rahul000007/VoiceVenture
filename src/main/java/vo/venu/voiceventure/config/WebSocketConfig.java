@@ -3,6 +3,7 @@ package vo.venu.voiceventure.config;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
@@ -47,7 +48,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         registry.addEndpoint("/ws").
-                setAllowedOrigins("http://localhost:8081", "http://192.168.108.98:8081")
+                setAllowedOrigins("http://localhost:8081", "http://192.168.187.98:8081")
                 .setAllowedOriginPatterns("*").withSockJS();
     }
     @Override

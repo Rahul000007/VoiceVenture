@@ -1,19 +1,20 @@
 package vo.venu.voiceventure.service;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import vo.venu.voiceventure.dto.MatchAcceptanceEvent;
+import vo.venu.voiceventure.dto.MatchedUser;
+import vo.venu.voiceventure.dto.StartMatchingEvent;
 import vo.venu.voiceventure.enums.MatchAcceptanceStatus;
+import vo.venu.voiceventure.model.User;
+import vo.venu.voiceventure.repository.UserRepository;
 import vo.venu.voiceventure.sessionmgmt.MatchHolder;
-
 import java.util.*;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
+@Slf4j
 @Service
 public class MatchingService {
 
@@ -27,65 +28,63 @@ public class MatchingService {
     private ApplicationEventPublisher eventPublisher;
     @Autowired
     private MatchHolder matchHolder;
+    @Autowired
+    private UserRepository userRepository;
 
 
     public void startMatching(Long userId) {
-        matchHolder.getActiveUsers().add(userId);
-        System.out.println("M-H => " + matchHolder.getActiveUsers());
-        findMatch(userId);
+        eventPublisher.publishEvent(new StartMatchingEvent(userId));
     }
 
+    public void triggerMatching() {
+        List<Long> activeUsers = new ArrayList<>(matchHolder.getActiveUsers());
 
-    public void findMatch(Long userId) {
 
-        List<Long> eligibleUsers = new ArrayList<>();
-        for (Long matchedUserId : matchHolder.getActiveUsers()) {
-            if (!matchedUserId.equals(userId) &&
-                    !matchHolder.getUsersInMatchingState().containsKey(userId) &&
-                    !matchHolder.getUsersInMatchingState().containsKey(matchedUserId)) {
-                eligibleUsers.add(matchedUserId);
-            }
-        }
+        Collections.shuffle(activeUsers);
 
-        System.out.println("Eligible User => "+eligibleUsers);
-
-        if (!eligibleUsers.isEmpty()) {
-
-            Random random = new Random();
-
-            int randomIndex = random.nextInt(eligibleUsers.size());
-            Long matchedUserId = eligibleUsers.get(randomIndex);
+        for (int i = 0; i < activeUsers.size(); i += 2) {
+            Long userId = activeUsers.get(i);
+            Long matchedUserId = activeUsers.get(i + 1);
 
             String userName = userService.getUsernameById(userId);
             String matchedUserName = userService.getUsernameById(matchedUserId);
 
-            messagingTemplate.convertAndSendToUser(userName, "/queue/matching", matchedUserId);
-            messagingTemplate.convertAndSendToUser(matchedUserName, "/queue/matching", userId);
 
-            matchHolder.getUsersInMatchingState().put(userId, matchedUserId);
-            matchHolder.getUsersInMatchingState().put(matchedUserId, userId);
+            MatchedUser userMatchedFor = getMatchedUser(userRepository.findById(userId).get());
+            userMatchedFor.setUserId(matchedUserId);
 
+            MatchedUser matchedUser = getMatchedUser(userRepository.findById(matchedUserId).get());
+            matchedUser.setUserId(userId);
+
+
+            messagingTemplate.convertAndSendToUser(userName, "/queue/matching", matchedUser);
+            messagingTemplate.convertAndSendToUser(matchedUserName, "/queue/matching", userMatchedFor);
 
             matchHolder.getActiveUsers().remove(userId);
             matchHolder.getActiveUsers().remove(matchedUserId);
 
+            matchHolder.getUsersInMatchingState().put(userId, matchedUserId);
+            matchHolder.getUsersInMatchingState().put(matchedUserId, userId);
+
             matchHolder.getMatchAcceptanceEvent().put(userId, new MatchAcceptanceEvent(userId, matchedUserId, MatchAcceptanceStatus.PENDING));
             matchHolder.getMatchAcceptanceEvent().put(matchedUserId, new MatchAcceptanceEvent(matchedUserId, userId, MatchAcceptanceStatus.PENDING));
-            System.out.println(userName + " Matched with " + matchedUserName);
 
-        } else {
-            String userName = userService.getUsernameById(userId);
-            messagingTemplate.convertAndSendToUser(userName, "/queue/matching", -1);  // No user found for match
-            findMatch(userId);
+            matchHolder.getIsCaller().put(userId, false);
+            matchHolder.getIsCaller().put(matchedUserId, false);
+
+            log.info("{} Matched with {}", userName, matchedUserName);
         }
-
     }
-
 
     public void handleMatchAcceptance(MatchAcceptanceEvent matchAcceptanceEvent) {
         matchHolder.getMatchAcceptanceEvent().put(matchAcceptanceEvent.getUserId(), matchAcceptanceEvent);
+        Boolean isMatchedUserCaller = matchHolder.getIsCaller().get(matchAcceptanceEvent.getMatchedUserId());
+
+        if (matchAcceptanceEvent.getAcceptanceStatus().equals(MatchAcceptanceStatus.ACCEPTED) && !isMatchedUserCaller) {
+            matchHolder.getIsCaller().put(matchAcceptanceEvent.getUserId(), true);
+            log.info("{} is Caller", userService.getUsernameById(matchAcceptanceEvent.getUserId()));
+        }
         eventPublisher.publishEvent(matchAcceptanceEvent);
-        eventPublisher.publishEvent(1L);
     }
 
     public void stopMatching(Long userId) {
@@ -96,6 +95,18 @@ public class MatchingService {
             matchHolder.getMatchAcceptanceEvent().remove(userId);
             matchHolder.getMatchAcceptanceEvent().remove(matchedUserId);
         }
+    }
+
+    public static MatchedUser getMatchedUser(User user) {
+        MatchedUser matchedUser = new MatchedUser();
+        matchedUser.setMatchedUserId(user.getId());
+        matchedUser.setUsername(user.getUsername());
+        matchedUser.setEmail(user.getEmail());
+        matchedUser.setFullName(user.getFullName());
+        matchedUser.setProfilePictureUrl(user.getProfilePictureUrl());
+        matchedUser.setProficiencyLevel(user.getProficiencyLevel());
+        return matchedUser;
+
     }
 }
 

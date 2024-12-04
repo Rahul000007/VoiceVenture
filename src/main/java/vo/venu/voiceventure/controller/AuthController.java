@@ -25,10 +25,6 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<JwtResponse> login(@RequestBody LoginRequest loginRequest) {
         JwtResponse jwtResponse = authService.login(loginRequest);
-        holder.getActiveUsers().add(jwtResponse.getUserId());
-//        holder.getUsersInMatchingState().put(jwtResponse.getUserId(), jwtResponse.getUserId()+10);
-//        holder.getMatchAcceptanceEvent().put(jwtResponse.getUserId(), new MatchAcceptanceEvent(jwtResponse.getUserId(), jwtResponse.getUserId()+10, MatchAcceptanceStatus.ACCEPTED));
-//        System.out.println(holder.toString());
         return ResponseEntity.ok(jwtResponse);
     }
 

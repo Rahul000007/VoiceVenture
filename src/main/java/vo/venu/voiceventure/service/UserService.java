@@ -1,17 +1,15 @@
 package vo.venu.voiceventure.service;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import vo.venu.voiceventure.model.User;
-import vo.venu.voiceventure.repository.UserRepository;
+import vo.venu.voiceventure.dto.LoginDTO;
+import vo.venu.voiceventure.dto.RegisterTokenDTO;
+import vo.venu.voiceventure.dto.SignUpDTO;
 
-@Service
-public class UserService {
-    @Autowired
-    private UserRepository userRepository;
+public interface UserService {
+    RegisterTokenDTO registerUser(SignUpDTO signUpDTO) throws Exception;
 
-    public String getUsernameById(Long userId) {
-        User user= userRepository.findById(userId).get();
-        return user.getUsername();
-    }
+    RegisterTokenDTO login(LoginDTO request) throws Exception;
+
+    String getNameByUserId(String userId);
+
+    String getUserNameByUserId(String userId);
 }

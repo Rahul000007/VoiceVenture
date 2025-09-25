@@ -5,12 +5,10 @@ import vo.venu.voiceventure.enums.ProficiencyLevel;
 
 @Data
 public class MatchedUser {
-    private Long userId;
-    private Long matchedUserId;
-    private String username;
-    private String email;
-    private String fullName;
-    private String profilePictureUrl;
+    private String userId;
+    private String matchedUserId;
+    private String name;
+    private String matchedUserProfilePicUrl;
     private ProficiencyLevel proficiencyLevel;
     private String rating;
     private String achievement;

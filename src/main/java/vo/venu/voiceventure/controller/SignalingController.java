@@ -7,7 +7,7 @@ import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 import vo.venu.voiceventure.dto.SignalingMessage;
-import vo.venu.voiceventure.service.CallService;
+import vo.venu.voiceventure.service.Impl.CallService;
 import vo.venu.voiceventure.service.UserService;
 import vo.venu.voiceventure.sessionmgmt.MatchHolder;
 
@@ -88,8 +88,8 @@ public class SignalingController {
         sendToUser(signalingMessage.getReceiverId(), "/queue/call-end", signalingMessage);
     }
 
-    private void sendToUser(Long id, String destination, SignalingMessage signalingMessage) {
-        String username = userService.getUsernameById(id);
+    private void sendToUser(String id, String destination, SignalingMessage signalingMessage) {
+        String username = userService.getNameByUserId(id);
         System.out.println("Sent To " + username + " " + signalingMessage.getType());
         messagingTemplate.convertAndSendToUser(username, destination, signalingMessage);
     }

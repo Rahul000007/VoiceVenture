@@ -1,4 +1,4 @@
-package vo.venu.voiceventure.service;
+package vo.venu.voiceventure.service.Impl;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -11,7 +11,7 @@ import java.util.Map;
 @Slf4j
 public class CallService {
 
-    private final Map<Long, Long> activeCalls = new HashMap<>();
+    private final Map<String, String> activeCalls = new HashMap<>();
 
     public void initiateCall(SignalingMessage message) {
         activeCalls.put(message.getSenderId(), message.getReceiverId());
@@ -30,7 +30,7 @@ public class CallService {
         activeCalls.remove(message.getReceiverId());
     }
 
-    public Long getActiveCall(Long userId) {
+    public String getActiveCall(Long userId) {
         return activeCalls.get(userId);
     }
 }

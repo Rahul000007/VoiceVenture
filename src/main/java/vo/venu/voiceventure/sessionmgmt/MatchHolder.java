@@ -17,8 +17,8 @@ import java.util.Set;
 @ToString
 @Scope(value = ConfigurableBeanFactory.SCOPE_SINGLETON)
 public class MatchHolder {
-    private Set<Long> activeUsers = new HashSet<>();
-    private Map<Long, Long> usersInMatchingState = new HashMap<>();
-    private Map<Long, MatchAcceptanceEvent> matchAcceptanceEvent= new HashMap<>();
-    private Map<Long, Boolean> isCaller = new HashMap<>();
+    private Set<String> activeUsers = new HashSet<>();
+    private Map<String, String> usersInMatchingState = new HashMap<>();
+    private Map<String, MatchAcceptanceEvent> matchAcceptanceEvent= new HashMap<>();
+    private Map<String, Boolean> isCaller = new HashMap<>();
 }

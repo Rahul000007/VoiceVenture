@@ -7,7 +7,7 @@ import vo.venu.voiceventure.enums.MatchAcceptanceStatus;
 @Data
 @AllArgsConstructor
 public class MatchAcceptanceEvent {
-    private Long userId;
-    private Long matchedUserId;
+    private String userId;
+    private String matchedUserId;
     private MatchAcceptanceStatus acceptanceStatus;
 }

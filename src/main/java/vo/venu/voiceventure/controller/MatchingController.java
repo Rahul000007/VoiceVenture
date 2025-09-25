@@ -1,25 +1,31 @@
 package vo.venu.voiceventure.controller;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.*;
-import vo.venu.voiceventure.dto.MatchAcceptanceEvent;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RestController;
+import vo.venu.voiceventure.constants.BaseResponse;
+import vo.venu.voiceventure.constants.RestMapping;
 import vo.venu.voiceventure.service.MatchingService;
+import vo.venu.voiceventure.util.AuthServiceUtil;
 
 @RestController
-@RequestMapping("/api/matching")
+@RequiredArgsConstructor
 public class MatchingController {
 
-    @Autowired
-    private  MatchingService matchingService;
+    private final MatchingService matchingService;
 
-    @PostMapping("/start")
-    public void startMatching(@RequestBody Long userId) {
-         matchingService.startMatching(userId);
+    @GetMapping(RestMapping.START_MATCHING)
+    public ResponseEntity<BaseResponse> startMatching() {
+        matchingService.startMatching(AuthServiceUtil.getUserId());
+        return new ResponseEntity<>(new BaseResponse("Matching started"), HttpStatus.OK);
     }
 
-    @PostMapping("/stop")
-    public void stopMatching(@RequestBody Long userId) {
-         matchingService.stopMatching(userId);
+    @GetMapping(RestMapping.STOP_MATCHING)
+    public ResponseEntity<BaseResponse> stopMatching() {
+        matchingService.stopMatching(AuthServiceUtil.getUserId());
+        return new ResponseEntity<>(new BaseResponse("Matching Stopped"), HttpStatus.OK);
     }
 
 }

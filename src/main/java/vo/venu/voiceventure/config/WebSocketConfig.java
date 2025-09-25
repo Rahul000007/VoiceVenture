@@ -3,7 +3,6 @@ package vo.venu.voiceventure.config;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
@@ -21,9 +20,12 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
-import org.springframework.web.socket.server.support.HttpSessionHandshakeInterceptor;
-import vo.venu.voiceventure.security.jwt.JwtProvider;
-import vo.venu.voiceventure.service.UserDetailsServiceImpl;
+import vo.venu.voiceventure.enums.Status;
+import vo.venu.voiceventure.model.User;
+import vo.venu.voiceventure.repository.UserRepository;
+import vo.venu.voiceventure.service.Impl.UserDetailsServiceImpl;
+import vo.venu.voiceventure.util.AuthServiceUtil;
+import vo.venu.voiceventure.util.JwtUtil;
 
 @Configuration
 @EnableWebSocketMessageBroker
@@ -32,12 +34,9 @@ import vo.venu.voiceventure.service.UserDetailsServiceImpl;
 @Slf4j
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
-
-    @Autowired
-    private JwtProvider jwtProvider;
-    @Autowired
     private final UserDetailsServiceImpl userDetailsService;
-
+    private final UserRepository userRepository;
+    private final JwtUtil jwtUtil;
 
     @Override
     public void configureMessageBroker(MessageBrokerRegistry config) {
@@ -48,9 +47,10 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         registry.addEndpoint("/ws").
-                setAllowedOrigins("http://localhost:8081", "http://192.168.187.98:8081")
+                setAllowedOrigins("http://localhost:8081", "http://10.250.59.98:8081")
                 .setAllowedOriginPatterns("*").withSockJS();
     }
+
     @Override
     public void configureClientInboundChannel(ChannelRegistration registration) {
         registration.interceptors(new ChannelInterceptor() {
@@ -62,7 +62,13 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                     String authorizationHeader = accessor.getFirstNativeHeader("Authorization");
                     assert authorizationHeader != null;
                     String token = authorizationHeader.substring(7);
-                    String username = jwtProvider.getUsernameFromJwtToken(token);
+                    String username = null;
+                    try {
+                        username = jwtUtil.extractUsername(token);
+                    } catch (Exception e) {
+                        log.info("Invalid token");
+                        throw new RuntimeException(e.getMessage());
+                    }
                     UserDetails userDetails = userDetailsService.loadUserByUsername(username);
                     UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
                     SecurityContextHolder.getContext().setAuthentication(usernamePasswordAuthenticationToken);
